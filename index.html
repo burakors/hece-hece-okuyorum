@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#df332f">
+<title>Hece Hece Okuyorum</title>
+<style>
+:root{--bg:#f7f4ed;--card:#fff;--ink:#222;--muted:#777;--red:#df332f;--soft:#ffe9e7;--gray:#e7e2d8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{max-width:650px;margin:auto;min-height:100vh;padding:14px 14px 30px}
+header{text-align:center;padding:8px 0 12px}
+h1{margin:0;font-size:28px}.sub{color:var(--muted);font-size:14px;margin-top:4px}
+.tabs{display:flex;gap:7px;overflow-x:auto;padding:5px 0 12px;position:sticky;top:0;background:var(--bg);z-index:2;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{border:0;border-radius:18px;padding:10px 14px;background:var(--gray);font-weight:750;white-space:nowrap;font-size:14px}
+.tab.active{background:var(--red);color:#fff}
+.card{background:var(--card);border-radius:25px;padding:24px 16px;box-shadow:0 5px 20px #00000010;text-align:center}
+.label{font-size:14px;color:var(--muted);margin-bottom:12px}
+.parts{font-size:38px;font-weight:850;min-height:68px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap}
+.arrow{color:var(--red);font-size:28px;font-weight:800}
+.result{font-size:52px;font-weight:950;min-height:80px;display:flex;align-items:center;justify-content:center;margin:3px 0 12px}
+.sentence{font-size:31px;line-height:1.5;font-weight:850;min-height:155px;display:flex;align-items:center;justify-content:center}
+.progress{height:8px;background:#e5e0d6;border-radius:8px;overflow:hidden}
+.bar{height:100%;background:var(--red);transition:width .2s}
+.count{font-size:13px;color:var(--muted);margin:9px 0}
+.buttons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.action{border:0;border-radius:15px;padding:14px 7px;font-size:16px;font-weight:800;cursor:pointer}
+.prev{background:var(--gray)}.again{background:var(--soft);color:#b21f1b}.next{background:var(--red);color:#fff}
+.action:disabled{opacity:.35;cursor:default}
+.hint{background:#fff;border-radius:18px;margin-top:14px;padding:12px;text-align:center;color:#666;font-size:13px}
+.flash{animation:flash .35s}
+@keyframes flash{50%{transform:scale(1.06)}}
+@media(max-width:420px){.parts{font-size:34px}.result{font-size:46px}.action{font-size:15px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<h1>📖 Hece Hece Okuyorum</h1>
+<div class="sub">Önce parçaları oku, sonra birleşmiş halini oku.</div>
+</header>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="card">
+<div class="label" id="label"></div>
+<div id="content"></div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<div class="count" id="count"></div>
+
+<div class="buttons">
+<button class="action prev" id="prev" onclick="previous()">← Önceki</button>
+<button class="action again" onclick="repeatCard()">↻ Tekrar</button>
+<button class="action next" id="next" onclick="showResult()">✓ Doğru</button>
+</div>
+</div>
+
+<div class="hint">
+<b>Tekrar</b> bu bölümün en başına döner.
+Örneğin: <b>a + t → at</b>. Çocuk önce “a, t”, sonra “at” okusun.
+</div>
+</div>
+
+<script>
+const lessons={
+"Birleştirme":[
+["a - n","an"],["n - a","na"],["a - t","at"],["e - t","et"],
+["t - a","ta"],["t - e","te"],["ta - t","tat"],["ta - n","tan"],
+["Ta - n","Tan"],["na - ne","nane"],["ne - ne","nene"],
+["an - ne","anne"],["a - na","ana"],["te - n - te","tente"],
+["ta - ne","tane"],["an - te - n","anten"]
+],
+"NANE":[
+["Nane ne?","Nane ne?"],["An nane an.","An nane an."],
+["1 nane an.","1 nane an."],["Anne nane an.","Anne nane an."],
+["Nene nane ne?","Nene nane ne?"]
+],
+"NE?":[
+["Nene ne?","Nene ne?"],["Anne ne?","Anne ne?"],
+["Ana ne?","Ana ne?"],["Nene nane ne?","Nene nane ne?"],
+["Anne nane ne?","Anne nane ne?"]
+],
+"ANNE":[
+["Anne nane ne?","Anne nane ne?"],["Anne nene ne?","Anne nene ne?"],
+["An, anne nane an.","An, anne nane an."],["An, anne an.","An, anne an."],
+["Anne 2 nane ne?","Anne 2 nane ne?"]
+],
+"NENE":[
+["Nene nane an.","Nene nane an."],["An nene an.","An nene an."],
+["Nene, ana ne?","Nene, ana ne?"],["An, nene nane an.","An, nene nane an."]
+]
+};
+
+let current="Birleştirme";
+let i=0;
+let showingResult=false;
+
+function renderTabs(){
+ const el=document.getElementById("tabs");
+ el.innerHTML="";
+ Object.keys(lessons).forEach(k=>{
+  const b=document.createElement("button");
+  b.className="tab "+(k===current?"active":"");
+  b.textContent=k;
+  b.onclick=()=>{
+   current=k;
+   i=0;
+   showingResult=false;
+   renderTabs();
+   render();
+  };
+  el.appendChild(b);
+ });
+}
+
+function render(){
+ const arr=lessons[current];
+ const done=i>=arr.length;
+ const content=document.getElementById("content");
+
+ document.getElementById("label").textContent=done?"Bitti 🎉":current;
+
+ if(done){
+   content.innerHTML='<div class="result">Harika! 🎉</div>';
+ }else if(current==="Birleştirme"){
+   const [parts,res]=arr[i];
+   const pieces=parts.split(" - ");
+   const p=pieces.map((x,n)=>
+     `<span>${x}</span>${n<pieces.length-1?'<span class="arrow">+</span>':''}`
+   ).join("");
+
+   content.innerHTML=
+     `<div class="parts">${p}</div>
+      <div class="arrow">↓</div>
+      <div class="result" style="${showingResult?'':'visibility:hidden'}">${res}</div>`;
+ }else{
+   content.innerHTML=`<div class="sentence">${arr[i][0]}</div>`;
+ }
+
+ document.getElementById("count").textContent=done?"":`${i+1} / ${arr.length}`;
+ document.getElementById("bar").style.width=(done?100:(i+1)/arr.length*100)+"%";
+ document.getElementById("prev").disabled=i===0;
+
+ const next=document.getElementById("next");
+ next.disabled=done;
+ if(done) next.textContent="Bitti";
+ else if(current==="Birleştirme" && !showingResult) next.textContent="✓ Doğru";
+ else next.textContent="Sonraki →";
+}
+
+function previous(){
+ if(i>0){
+  i--;
+  showingResult=false;
+  render();
+ }
+}
+
+function showResult(){
+ if(i>=lessons[current].length)return;
+
+ if(current==="Birleştirme" && !showingResult){
+  showingResult=true;
+  render();
+
+  const r=document.querySelector(".result");
+  if(r){r.classList.add("flash")}
+ }else{
+  i++;
+  showingResult=false;
+  render();
+ }
+}
+
+function repeatCard(){
+ i=0;
+ showingResult=false;
+ render();
+}
+
+renderTabs();
+render();
+</script>
+</body>
+</html>
