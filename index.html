@@ -12,10 +12,17 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple
 .app{max-width:650px;margin:auto;min-height:100vh;padding:14px 14px 30px}
 header{text-align:center;padding:8px 0 12px}
 h1{margin:0;font-size:28px}.sub{color:var(--muted);font-size:14px;margin-top:4px}
-.tabs{display:flex;gap:7px;overflow-x:auto;padding:5px 0 12px;position:sticky;top:0;background:var(--bg);z-index:2;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tab{border:0;border-radius:18px;padding:10px 14px;background:var(--gray);font-weight:750;white-space:nowrap;font-size:14px}
-.tab.active{background:var(--red);color:#fff}
+.tabs{display:none}
+.home-menu{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+.menu-choice{border:0;border-radius:20px;padding:20px 12px;background:#fff;box-shadow:0 4px 16px #0000000d;text-align:left;font-size:17px;font-weight:800;color:var(--ink);min-height:82px;cursor:pointer}
+.menu-choice small{display:block;color:var(--muted);font-size:12px;font-weight:500;margin-top:6px}
+.menu-choice:active{transform:scale(.98)}
+.home-view{display:block}
+.study-view{display:none}
+.home-intro{text-align:center;color:var(--muted);font-size:14px;margin:8px 0 16px}
+.home-title{font-size:20px;margin:18px 0 6px}
+.home-button{border:0;border-radius:14px;background:var(--gray);font-weight:800;padding:11px 14px;font-size:15px;margin:0 0 12px;cursor:pointer}
+
 .card{background:var(--card);border-radius:25px;padding:24px 16px;box-shadow:0 5px 20px #00000010;text-align:center}
 .label{font-size:14px;color:var(--muted);margin-bottom:12px}
 .parts{font-size:38px;font-weight:850;min-height:68px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap}
@@ -31,6 +38,7 @@ h1{margin:0;font-size:28px}.sub{color:var(--muted);font-size:14px;margin-top:4px
 .action:disabled{opacity:.35;cursor:default}
 .hint{background:#fff;border-radius:18px;margin-top:14px;padding:12px;text-align:center;color:#666;font-size:13px}
 .flash{animation:flash .35s}
+.video-section{margin-top:14px;background:#fff;border-radius:20px;padding:14px;box-shadow:0 5px 20px #0000000d}.video-head{margin:0 0 8px;font-size:18px;text-align:left}.video-player{display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:14px;background:#171717}.video-note{font-size:13px;color:#666;line-height:1.45;margin:8px 0 0}
 @keyframes flash{50%{transform:scale(1.06)}}
 @media(max-width:420px){.parts{font-size:34px}.result{font-size:46px}.action{font-size:15px}}
 </style>
@@ -42,6 +50,12 @@ h1{margin:0;font-size:28px}.sub{color:var(--muted);font-size:14px;margin-top:4px
 <div class="sub">Önce parçaları oku, sonra birleşmiş halini oku.</div>
 </header>
 
+<div id="homeView" class="home-view">
+<div class="home-intro">Çalışmak istediğin bölümü seç.</div>
+<div class="home-menu" id="homeMenu"></div>
+</div>
+<div id="studyView" class="study-view">
+<button class="home-button" onclick="goHome()">← Ana menü</button>
 <div class="tabs" id="tabs"></div>
 
 <div class="card">
@@ -62,40 +76,100 @@ h1{margin:0;font-size:28px}.sub{color:var(--muted);font-size:14px;margin-top:4px
 Örneğin: <b>a + t → at</b>. Çocuk önce “a, t”, sonra “at” okusun.
 </div>
 </div>
+</div>
+
+<section class="video-section" id="videoSection" aria-label="Okuma çalışması videosu">
+<h2 class="video-head">▶ Okuma videosu</h2>
+<div id="videoContent"></div>
+</section>
 
 <script>
 const lessons={
 "Birleştirme":[
-["a - n","an"],["n - a","na"],["a - t","at"],["e - t","et"],
-["t - a","ta"],["t - e","te"],["ta - t","tat"],["ta - n","tan"],
-["Ta - n","Tan"],["na - ne","nane"],["ne - ne","nene"],
-["an - ne","anne"],["a - na","ana"],["te - n - te","tente"],
-["ta - ne","tane"],["an - te - n","anten"]
+["a - n","an"],["n - a","na"],["e - n","en"],["n - e","ne"],
+["a - t","at"],["t - a","ta"],["e - t","et"],["t - e","te"],
+["a - ta","ata"],["ta - t","tat"],["Ta - n","Tan"],["ta - ne","tane"],
+["n - a - t","nat"],["n - e - t","net"],["an - te - n","anten"],
+["te - n","ten"],["te - n - te","tente"],["at - le - t","atlet"],
+["et - te","ette"],["et - ten","etten"],["a - na","ana"],
+["na - ne","nane"],["ne - ne","nene"],["an - ne","anne"],
+["a - ta - n","atan"],["an - ne - n","annen"],["ne - nen","nenen"],
+["na - nen","nanen"],["a - nan","anan"]
 ],
 "NANE":[
-["Nane ne?","Nane ne?"],["An nane an.","An nane an."],
+["Nane ne?","Nane ne?"],["Anne nane ne?","Anne nane ne?"],
+["Anne et ne?","Anne et ne?"],["Anne at ne?","Anne at ne?"],
+["Nene tane tane at.","Nene tane tane at."],["Ete et at.","Ete et at."],
+["3 et at nene.","3 et at nene."],["An nane an.","An nane an."],
 ["1 nane an.","1 nane an."],["Anne nane an.","Anne nane an."],
 ["Nene nane ne?","Nene nane ne?"]
 ],
 "NE?":[
-["Nene ne?","Nene ne?"],["Anne ne?","Anne ne?"],
-["Ana ne?","Ana ne?"],["Nene nane ne?","Nene nane ne?"],
-["Anne nane ne?","Anne nane ne?"]
+["Ne?","Ne?"],["Nene ne?","Nene ne?"],["Anne ne?","Anne ne?"],
+["Ana ne?","Ana ne?"],["Anne nane ne?","Anne nane ne?"],
+["Nene nane ne?","Nene nane ne?"]
 ],
 "ANNE":[
 ["Anne nane ne?","Anne nane ne?"],["Anne nene ne?","Anne nene ne?"],
 ["An, anne nane an.","An, anne nane an."],["An, anne an.","An, anne an."],
-["Anne 2 nane ne?","Anne 2 nane ne?"]
+["Anne 2 nane ne?","Anne 2 nane ne?"],["Nene ete nane at.","Nene ete nane at."],
+["Tan ete nane at.","Tan ete nane at."],["At Tan at.","At Tan at."],
+["Tane tane nane at.","Tane tane nane at."],["Anne ete et at.","Anne ete et at."],
+["Tat anne et tat.","Tat anne et tat."]
 ],
 "NENE":[
-["Nene nane an.","Nene nane an."],["An nene an.","An nene an."],
-["Nene, ana ne?","Nene, ana ne?"],["An, nene nane an.","An, nene nane an."]
+["Nene nane ne?","Nene nane ne?"],["An nene an.","An nene an."],
+["Nane an nene.","Nane an nene."],["3 nane an.","3 nane an."],
+["Nene nane an.","Nene nane an."],["Nene, ana ne?","Nene, ana ne?"],
+["An, nene nane an.","An, nene nane an."]
+],
+"Kelime Havuzu":[
+["an","an"],["na","na"],["en","en"],["ne","ne"],["ana","ana"],
+["nane","nane"],["nene","nene"],["anne","anne"],["at","at"],["ata","ata"],
+["et","et"],["ete","ete"],["ten","ten"],["Tan","Tan"],["tane","tane"],
+["ant","ant"],["atan","atan"],["ette","ette"],["etten","etten"],
+["anten","anten"],["annen","annen"],["nenen","nenen"],["nanen","nanen"],
+["anan","anan"],["tat","tat"],["nat","nat"],["net","net"],["tente","tente"],
+["atlet","atlet"]
+],
+"Rastgele Kelime Oyunu":[
+["Rastgele seçmek için Sonraki'ye bas.","Rastgele seçmek için Sonraki'ye bas."]
 ]
 };
 
 let current="Birleştirme";
 let i=0;
 let showingResult=false;
+
+
+function renderHomeMenu(){
+ const menu=document.getElementById("homeMenu");
+ menu.innerHTML="";
+ Object.keys(lessons).forEach(k=>{
+  const b=document.createElement("button");
+  b.className="menu-choice";
+  const subtitle = k==="Rastgele Kelime Oyunu" ? "Havuzdan rastgele kelime oku" :
+                  k==="Kelime Havuzu" ? "Tüm hece ve kelimeleri çalış" :
+                  k==="Birleştirme" ? "Hece parçalarını birleştir" : "Cümleleri sırayla oku";
+  b.innerHTML=`${k}<small>${subtitle}</small>`;
+  b.onclick=()=>selectLesson(k);
+  menu.appendChild(b);
+ });
+}
+function selectLesson(k){
+ current=k; i=0; showingResult=false;
+ document.getElementById("homeView").style.display="none";
+ document.getElementById("studyView").style.display="block";
+ document.getElementById("videoSection").style.display="block";
+ renderTabs(); render();
+ window.scrollTo(0,0);
+}
+function goHome(){
+ document.getElementById("studyView").style.display="none";
+ document.getElementById("videoSection").style.display="none";
+ document.getElementById("homeView").style.display="block";
+ window.scrollTo(0,0);
+}
 
 function renderTabs(){
  const el=document.getElementById("tabs");
@@ -104,19 +178,19 @@ function renderTabs(){
   const b=document.createElement("button");
   b.className="tab "+(k===current?"active":"");
   b.textContent=k;
-  b.onclick=()=>{
-   current=k;
-   i=0;
-   showingResult=false;
-   renderTabs();
-   render();
-  };
+  b.onclick=()=>selectLesson(k);
   el.appendChild(b);
  });
 }
 
 function render(){
  const arr=lessons[current];
+ if(current==="Rastgele Kelime Oyunu" && !showingResult){
+   const pool=lessons["Kelime Havuzu"].map(x=>x[1]);
+   lessons[current][0]=[pool[Math.floor(Math.random()*pool.length)],pool[Math.floor(Math.random()*pool.length)]];
+   // Keep the displayed target and result identical for this turn.
+   lessons[current][0][1]=lessons[current][0][0];
+ }
  const done=i>=arr.length;
  const content=document.getElementById("content");
 
@@ -140,6 +214,7 @@ function render(){
  }
 
  document.getElementById("count").textContent=done?"":`${i+1} / ${arr.length}`;
+ renderVideoContent();
  document.getElementById("bar").style.width=(done?100:(i+1)/arr.length*100)+"%";
  document.getElementById("prev").disabled=i===0;
 
@@ -167,6 +242,10 @@ function showResult(){
 
   const r=document.querySelector(".result");
   if(r){r.classList.add("flash")}
+ }else if(current==="Rastgele Kelime Oyunu"){
+  i=0;
+  showingResult=false;
+  render();
  }else{
   i++;
   showingResult=false;
@@ -180,8 +259,30 @@ function repeatCard(){
  render();
 }
 
+renderHomeMenu();
 renderTabs();
-render();
+document.getElementById("videoSection").style.display="none";
+
+// Gömülü videolar: yalnızca doğrudan video kimliği bilinen bağlantılar kullanılır.
+// YouTube'un uygulamaya geçişini tüm telefonlarda zorla engellemek mümkün değildir.
+const embeddedVideos = {
+  "Birleştirme": {id:"F5NJrEp9oVI", title:"an hecesi okuma çalışması"},
+  "NANE": {id:"F5NJrEp9oVI", title:"an hecesi okuma çalışması"},
+  "NE?": {id:"F5NJrEp9oVI", title:"an hecesi okuma çalışması"},
+  "ANNE": {id:"F5NJrEp9oVI", title:"an hecesi okuma çalışması"},
+  "NENE": {id:"F5NJrEp9oVI", title:"an hecesi okuma çalışması"}
+};
+function renderVideoContent(){
+ const box=document.getElementById("videoContent");
+ if(!box) return;
+ const v=embeddedVideos[current];
+ if(!v){
+   box.innerHTML='<p class="video-note">Bu bölüm için doğrulanmış video henüz eklenmedi.</p>';
+   return;
+ }
+ box.innerHTML=`<iframe class="video-player" src="https://www.youtube-nocookie.com/embed/${v.id}?playsinline=1&rel=0" title="${v.title}" loading="lazy" allow="encrypted-media; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe><p class="video-note">Video bu sayfanın içinde oynatılır. YouTube gömülü oynatmayı engellerse oynatılamayabilir.</p>`;
+}
+
 </script>
 </body>
 </html>
